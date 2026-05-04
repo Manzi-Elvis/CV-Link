@@ -1,13 +1,172 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum Theme {
+  MODERN
+  MINIMAL
+  CREATIVE
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String?
+  name            String?
+  username        String   @unique
+  image           String?
+  role            Role     @default(USER)
+  plan            Plan     @default(FREE)
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  cv              CV?
+  accounts        Account[]
+  sessions        Session[]
+  reports         Report[]
+  analyticsEvents AnalyticsEvent[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CV {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String?
+  bio         String?
+  location    String?
+  phone       String?
+  website     String?
+  photoUrl    String?
+  theme       Theme    @default(MODERN)
+  isPublished Boolean  @default(true)
+
+  education   Education[]
+  experience  Experience[]
+  skills      Skill[]
+  projects    Project[]
+  socialLinks SocialLink[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Education {
+  id        String @id @default(cuid())
+  cvId      String
+  cv        CV     @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  school    String
+  degree    String?
+  field     String?
+  startDate DateTime?
+  endDate   DateTime?
+  order     Int    @default(0)
+}
+
+model Experience {
+  id          String @id @default(cuid())
+  cvId        String
+  cv          CV     @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  company     String
+  role        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  current     Boolean @default(false)
+  order       Int     @default(0)
+}
+
+model Skill {
+  id    String @id @default(cuid())
+  cvId  String
+  cv    CV     @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  name  String
+  level Int?
+  order Int @default(0)
+}
+
+model Project {
+  id          String @id @default(cuid())
+  cvId        String
+  cv          CV     @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  url         String?
+  repoUrl     String?
+  order       Int @default(0)
+}
+
+model SocialLink {
+  id       String @id @default(cuid())
+  cvId     String
+  cv       CV     @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  platform String
+  url      String
+  order    Int @default(0)
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String
+  referrer  String?
+  userAgent String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  reason    String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String @id @default(cuid())
+  userId            String
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              String
+  provider          String
+  providerAccountId String
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
 }
