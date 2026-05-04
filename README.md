@@ -175,7 +175,7 @@ npm run dev
 
 We welcome contributors, builders, and thinkers.
 
-### Final Thought
+## Final Thought:
 
 In the next decade, nobody will send a PDF resume.
 They’ll send a link.
